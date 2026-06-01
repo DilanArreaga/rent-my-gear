@@ -8,6 +8,7 @@ import {
   parseISO,
 } from "date-fns";
 import { es } from "date-fns/locale";
+import { calculateInsurance } from "./insurance"; // 1. IMPORTAMOS TU LÓGICA DE SEGURO
 
 /**
  * Format a date for display in Spanish locale
@@ -44,29 +45,42 @@ export function calculateTotalPrice(dailyRate: number, days: number): number {
 }
 
 /**
- * Calculate rental price breakdown
+ * Calculate rental price breakdown including smart insurance
+ * 2. AGREGAMOS EL PARÁMETRO CATEGORYID (con un valor por defecto para no romper código antiguo)
+ */
+/**
+ * Calculate rental price breakdown including smart insurance
+ * Hacemos que categoryId sea opcional (?) para no romper los tests existentes
  */
 export function calculateRentalPrice(
   dailyRate: number,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  categoryId?: string // Aquí usamos ? para que sea opcional
 ): {
   days: number;
   dailyRate: number;
   subtotal: number;
+  insuranceFee: number;
+  insurance: number;
   total: number;
 } {
   const days = calculateRentalDays(startDate, endDate);
   const subtotal = calculateTotalPrice(dailyRate, days);
+  
+  // Si no se proporciona una categoría (tests viejos), el seguro es 0.
+  // Si se proporciona (tests nuevos e interfaz), se calcula dinámicamente.
+  const insuranceFee = categoryId ? calculateInsurance(categoryId, dailyRate, days) : 0;
 
   return {
     days,
     dailyRate,
     subtotal,
-    total: subtotal, // Could add taxes/fees here in the future
+    insuranceFee,
+    insurance: insuranceFee,
+    total: subtotal + insuranceFee, // El total solo incluirá seguro si existe una categoría
   };
 }
-
 /**
  * Format price in Mexican Pesos
  */
@@ -130,20 +144,14 @@ export function parseDateSafe(dateString: string): Date | null {
 
 /**
  * Check if a date is available (mock implementation)
- * In a real app, this would check against a bookings database
  */
 export function isDateAvailable(_date: Date, _gearId: string): boolean {
-  // Mock: All dates are available
-  // In production, check against reservations
   return true;
 }
 
 /**
  * Get unavailable dates for a gear item (mock implementation)
- * Returns an array of dates that are already booked
  */
 export function getUnavailableDates(_gearId: string): Date[] {
-  // Mock: No dates are unavailable
-  // In production, fetch from database
   return [];
 }
