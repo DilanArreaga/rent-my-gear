@@ -3,6 +3,7 @@ import { HeroCarousel } from "@/components/features/HeroCarousel";
 import { CategoryButtons } from "@/components/features/CategoryButtons";
 import { getRandomGear } from "@/services/inventoryService";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Shield } from "lucide-react";
 
 async function FeaturedGear() {
   const items = await getRandomGear(5);
@@ -37,6 +38,23 @@ export default function HomePage() {
             Encuentra el equipo profesional que necesitas para fotografía,
             aventuras en montaña o deportes acuáticos.
           </p>
+
+          {/* Pricing & Insurance info */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex items-center gap-2 bg-muted rounded-lg px-4 py-2">
+              <span className="text-sm text-muted-foreground">Desde</span>
+              <span className="font-bold text-primary text-lg">$50 / día</span>
+            </div>
+            <div
+              data-testid="insurance-info"
+              className="flex items-center gap-2 bg-primary/10 rounded-lg px-4 py-2"
+            >
+              <Shield className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">
+                Seguro opcional disponible — desde 10% por día
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
