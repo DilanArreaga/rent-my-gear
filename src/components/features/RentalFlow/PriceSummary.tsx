@@ -1,134 +1,84 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Receipt, Loader2 } from "lucide-react";
 import { GearItem } from "@/lib/validation";
-import {
-  formatDate,
-  formatPrice,
-  calculateRentalPrice,
-} from "@/lib/date-utils";
-import type { RentalDates } from "./index";
+import { RentalDates } from "./index";
+import { calculateRentalPrice } from "@/lib/date-utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { ShieldCheck, Calendar, DollarSign } from "lucide-react";
 
 interface PriceSummaryProps {
   item: GearItem;
   dates: RentalDates;
-  onConfirm: () => Promise<void>;
+  onConfirm: () => void;
   onBack: () => void;
 }
 
-export function PriceSummary({
-  item,
-  dates,
-  onConfirm,
-  onBack,
-}: PriceSummaryProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
+export function PriceSummary({ item, dates, onConfirm, onBack }: PriceSummaryProps) {
+  // Pasamos explícitamente el item.category o item.categoryId para activar las reglas Smart Insurance
   const pricing = calculateRentalPrice(
     item.dailyRate,
     dates.startDate,
-    dates.endDate
+    dates.endDate,
+    item.category || "standard"
   );
 
-  const handleConfirm = async () => {
-    setIsLoading(true);
-    try {
-      await onConfirm();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={onBack} disabled={isLoading}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Receipt className="w-5 h-5" />
-            Resumen de Renta
-          </CardTitle>
-        </div>
+    <Card className="w-full shadow-md border">
+      <CardHeader>
+        <CardTitle className="text-xl font-bold flex items-center gap-2">
+          Resumen de la Renta
+        </CardTitle>
       </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Item details */}
-        <div className="bg-muted/50 rounded-lg p-4">
-          <h4 className="font-semibold mb-2">{item.name}</h4>
-          <p className="text-sm text-muted-foreground">{item.description}</p>
-        </div>
-
-        {/* Dates */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-            Período de Renta
-          </h4>
-          <div className="flex justify-between items-center py-2 border-b">
-            <span className="text-muted-foreground">Fecha inicio</span>
-            <span className="font-medium">{formatDate(dates.startDate)}</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b">
-            <span className="text-muted-foreground">Fecha fin</span>
-            <span className="font-medium">{formatDate(dates.endDate)}</span>
-          </div>
-          <div className="flex justify-between items-center py-2">
-            <span className="text-muted-foreground">Duración</span>
-            <span className="font-medium">
-              {pricing.days} {pricing.days === 1 ? "día" : "días"}
+      <CardContent className="space-y-4">
+        <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-sm">
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground flex items-center gap-1">
+              <Calendar className="w-4 h-4" /> Días de renta:
             </span>
+            <span className="font-semibold">{pricing.days} día(s)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Precio por día:</span>
+            <span className="font-semibold">${pricing.dailyRate.toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Pricing breakdown */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-            Desglose de Precio
-          </h4>
-          <div className="flex justify-between items-center py-2 border-b">
-            <span className="text-muted-foreground">
-              Tarifa diaria
-            </span>
-            <span className="font-medium">{formatPrice(pricing.dailyRate)}</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b">
-            <span className="text-muted-foreground">
-              {formatPrice(pricing.dailyRate)} x {pricing.days} días
-            </span>
-            <span className="font-medium">{formatPrice(pricing.subtotal)}</span>
-          </div>
-          <div className="flex justify-between items-center py-3 bg-primary/5 rounded-lg px-3 -mx-3">
-            <span className="font-semibold text-lg">Total</span>
-            <span className="font-bold text-xl text-primary">
-              {formatPrice(pricing.total)}
+        <div className="space-y-3 pt-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Subtotal:</span>
+            <span className="font-medium text-foreground" data-testid="subtotal">
+              ${pricing.subtotal.toFixed(2)}
             </span>
           </div>
-        </div>
 
-        {/* Confirm button */}
-        <Button
-          onClick={handleConfirm}
-          className="w-full h-12"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Procesando...
-            </>
-          ) : (
-            "Confirmar Renta"
+          {pricing.insuranceFee > 0 && (
+            <div className="flex justify-between text-sm bg-primary/5 p-2 rounded border border-primary/10">
+              <span className="text-primary font-medium flex items-center gap-1">
+                <ShieldCheck className="w-4 h-4" /> Seguro Inteligente:
+              </span>
+              <span className="font-semibold text-primary" data-testid="insurance">
+                ${pricing.insuranceFee.toFixed(2)}
+              </span>
+            </div>
           )}
-        </Button>
 
-        <p className="text-xs text-center text-muted-foreground">
-          Al confirmar, aceptas los términos y condiciones del servicio de renta.
-        </p>
+          <div className="border-t pt-3 flex justify-between items-center">
+            <span className="font-bold text-base">Total General:</span>
+            <span className="text-xl font-extrabold text-foreground" data-testid="total">
+              ${pricing.total.toFixed(2)}
+            </span>
+          </div>
+        </div>
       </CardContent>
+      <CardFooter className="flex gap-3">
+        <Button variant="outline" onClick={onBack} className="w-1/3">
+          Atrás
+        </Button>
+        <Button onClick={onConfirm} className="w-2/3 bg-primary text-primary-foreground font-semibold">
+          Confirmar Renta
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
